@@ -1,0 +1,116 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+List of todo task 
+<br>
+<div id="tasks_all">
+{% for task in tasks %}
+    *********************
+    <p id="{{task.id}}">
+        Title : {{task.title}}<br>
+        Description : {{task.description}}<br>
+        Is_Completed : {{task.is_completed}}<br>
+        Priority : {{task.priority}}<br>
+        Due Date : {{task.due_date}}<br>
+        <a href="#" onclick="deletetask({{task.id}})">Delete</a>
+    </p>
+    <br>
+{% endfor %}
+</div>
+
+{{request.user.username}}
+
+
+
+
+
+<br><br>
+<form method="post" id="taskform">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" onclick="submitFunction()">
+</form>
+<br><br>
+
+
+<script>
+    function submitFunction(){
+        event.preventDefault();
+        console.log("hello")
+        var formdata=$("#taskform").serializeArray();
+        var jsondata={};
+        for(var i =0;i<formdata.length;i++){
+        var item= formdata[i];
+        jsondata[item.name]=item.value;
+        }
+        var SubmitURL="{% url 'todo:taskadd' %}"
+        var jsonDataStr = JSON.stringify(jsondata);
+        $.ajax({
+        url:SubmitURL,
+        type:'POST',
+        contentType:"application/json",
+        data: jsonDataStr,
+        headers :{ 
+            'X-CSRFToken':getCSRFToken(),
+
+        },
+        success : function(response){
+            new_data = "**************** <br>"
+            console.log(response)
+            new_data += `<p id=${response.id}>
+                     Title : ${response.data.title}<br>
+                     Description : ${response.data.description}<br>
+                     Is_Completed : ${response.is_completed}<br>
+                     Priority : ${response.data.priority}<br>
+                     Due Date : ${response.data.due_date}<br> 
+                     <a href="#" onclick="deletetask(${response.id})">Delete</a>
+                     </p> `
+                     
+            all_previous_data = document.getElementById("tasks_all").innerHTML
+            all_previous_data += new_data
+            console.log(all_previous_data);
+            document.getElementById("tasks_all").innerHTML = all_previous_data
+            $("#taskform").reset()
+        }
+        });
+    }
+
+
+    function getCSRFToken() {
+            var cookieValue = null;
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+              var cookie = cookies[i].trim();
+              if (cookie.startsWith('csrftoken=')) {
+                cookieValue = cookie.substring('csrftoken='.length, cookie.length);
+                break;
+              }
+            }
+            return cookieValue;
+          }
+
+    function deletetask(id){
+        event.preventDefault();
+        console.log(id);
+        SubmitURL = "{% url 'todoapp:delete-task' 0 %}".replace("0",id);
+        $.ajax({
+            url:SubmitURL,
+            type:'DELETE',
+            contentType:"application/json",
+            headers :{ 
+                'X-CSRFToken':getCSRFToken(),
+    
+            },
+            success : function(response){
+                if(response.message=="success"){
+                    document.getElementById(id).innerHTML = ""
+                }
+            }
+        })
+        }
+
+    
+
+
+    
+</script>
+
